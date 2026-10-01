@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasy Gridiron Draft Calculator</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --bg-panel: #171e2e;
+    --bg-panel-2: #1e2740;
+    --border: #2a3450;
+    --text: #e7ebf5;
+    --text-dim: #94a0bd;
+    --accent: #22c55e;
+    --accent-dim: #16803f;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header h1 .ball { font-size: 22px; }
+  header .sub { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+  nav.tabs {
+    display: flex;
+    gap: 6px;
+    padding: 14px 24px 0;
+  }
+  nav.tabs button {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    color: var(--text-dim);
+    padding: 10px 18px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  nav.tabs button.active {
+    background: var(--bg-panel-2);
+    color: var(--accent);
+  }
+  main {
+    padding: 0 24px 40px;
+  }
+  .panel {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 0 12px 12px 12px;
+    padding: 20px;
+  }
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
+  .field input[type=number], .field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 9px;
+    border-radius: 7px;
+    width: 90px;
+    font-size: 14px;
+  }
+  .field input[type=text] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 14px;
+    width: 220px;
+  }
+  button.primary {
+    background: var(--accent);
+    border: none;
+    color: #071409;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button.primary:hover { background: #34d466; }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13.5px;
+  }
+  button.secondary:hover { color: var(--text); border-color: var(--text-dim); }
+  button.small {
+    background: var(--accent);
+    border: none;
+    color: #071409;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .pillrow { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .pill.active { background: var(--accent); color: #071409; border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--text-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+  tbody td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #202a42;
+    white-space: nowrap;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .tablewrap { overflow-x: auto; max-height: 640px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; margin-top: 14px; }
+  .rank { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .name { font-weight: 600; }
+  .pos-badge {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: var(--bg-panel-2);
+    color: var(--blue);
+    border: 1px solid var(--border);
+  }
+  .fpts { color: var(--accent); font-weight: 700; }
+  .grade-badge {
+    display: inline-block;
+    font-size: 12.5px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: .02em;
+  }
+  .grade-A { background: rgba(34,197,94,0.16); color: var(--green); }
+  .grade-B { background: rgba(59,130,246,0.16); color: var(--blue); }
+  .grade-C { background: rgba(234,179,8,0.16); color: #eab308; }
+  .grade-D { background: rgba(239,68,68,0.16); color: var(--red); }
+  #team-rating-table tbody tr.me { background: rgba(34,197,94,0.08); }
+  .muted { color: var(--text-dim); }
+  h3 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-draft { display: grid; grid-template-columns: 340px 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-draft, .grid2 { grid-template-columns: 1fr; } }
+  .weightgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .weightgrid .field input { width: 100%; }
+  .board { display: flex; flex-direction: column; gap: 4px; max-height: 520px; overflow-y: auto; }
+  .pickrow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 7px; font-size: 12.5px; }
+  .pickrow.me { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.35); }
+  .pickrow .picknum { color: var(--text-dim); width: 34px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .pickrow .teamtag { width: 62px; flex-shrink: 0; color: var(--text-dim); font-weight: 600; }
+  .avail-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #202a42; }
+  .avail-row:last-child { border-bottom: none; }
+  .avail-row .info { flex: 1; }
+  .avail-row .info .n { font-weight: 600; font-size: 13.5px; }
+  .avail-row .info .s { color: var(--text-dim); font-size: 11.5px; }
+  .roster-slot { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 7px; font-size: 13px; background: var(--bg); margin-bottom: 4px; border: 1px solid var(--border); }
+  .roster-slot .slotname { color: var(--text-dim); font-weight: 700; width: 46px; flex-shrink: 0; }
+  .roster-slot.empty { opacity: 0.45; }
+  .stat-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .tile { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .tile .v { font-size: 20px; font-weight: 800; color: var(--accent); }
+  .tile .l { font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-top: 2px; }
+  .banner {
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.3);
+    color: #a8c7fa;
+    padding: 10px 14px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .hidden { display: none !important; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #2a3450; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><span class="ball">🏈</span> Fantasy Gridiron Draft Calculator</h1>
+    <div class="sub">8-team points league &middot; player rankings &amp; live snake-draft assistant</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="rankings">Rankings</button>
+  <button class="tab-btn" data-tab="draft">Draft Assistant</button>
+</nav>
+
+<main>
+  <div class="panel">
+
+    <div class="banner">
+      Player baseline = final 2025 NFL regular season stats (ESPN), since 2026 season stats don't exist yet
+      (the season just kicked off). QB/RB/WR/TE scoring below uses a common PPR-style formula you can edit.
+      Kicker scoring uses standard field-goal distance tiers (0&ndash;39yd = 3pts, 40&ndash;49 = 4pts, 50+ = 5pts,
+      XP = 1pt). DST scoring is approximated from each team's season-average points allowed per game, smoothed
+      across the standard points-allowed scoring tiers (sacks/turnovers/defensive TDs aren't in this data set)
+      &mdash; both K and DST formulas are fixed, not editable, since they aren't simple per-stat formulas.
+    </div>
+
+    <!-- SCORING SETTINGS (shared, skill positions only) -->
+    <div class="card" style="margin-bottom:18px;">
+      <h3>Scoring Weights (QB / RB / WR / TE &mdash; points per stat)</h3>
+      <div class="weightgrid">
+        <div class="field"><label>Pass Yds</label><input type="number" step="0.01" id="w-passYds" value="0.04"></div>
+        <div class="field"><label>Pass TD</label><input type="number" step="0.5" id="w-passTd" value="4"></div>
+        <div class="field"><label>INT</label><input type="number" step="0.5" id="w-intc" value="-2"></div>
+        <div class="field"><label>Rush Yds</label><input type="number" step="0.01" id="w-rushYds" value="0.1"></div>
+        <div class="field"><label>Rush TD</label><input type="number" step="0.5" id="w-rushTd" value="6"></div>
+        <div class="field"><label>Reception</label><input type="number" step="0.5" id="w-rec" value="1"></div>
+        <div class="field"><label>Rec Yds</label><input type="number" step="0.01" id="w-recYds" value="0.1"></div>
+        <div class="field"><label>Rec TD</label><input type="number" step="0.5" id="w-recTd" value="6"></div>
+        <div class="field"><label>Fumble Lost</label><input type="number" step="0.5" id="w-fumLost" value="-2"></div>
+        <div class="field" style="justify-content:flex-end;"><button class="secondary" id="reset-weights">Reset defaults</button></div>
+      </div>
+    </div>
+
+    <!-- RANKINGS TAB -->
+    <section id="tab-rankings">
+      <div class="row" style="margin-bottom:4px;">
+        <div class="field">
+          <label>Search player</label>
+          <input type="text" id="search" placeholder="e.g. Allen">
+        </div>
+        <div class="field">
+          <label>Position</label>
+          <div class="pillrow" id="pos-filter">
+            <div class="pill active" data-pos="ALL">All</div>
+            <div class="pill" data-pos="QB">QB</div>
+            <div class="pill" data-pos="RB">RB</div>
+            <div class="pill" data-pos="WR">WR</div>
+            <div class="pill" data-pos="TE">TE</div>
+            <div class="pill" data-pos="K">K</div>
+            <div class="pill" data-pos="DST">DST</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tablewrap">
+        <table id="rank-table">
+          <thead>
+            <tr>
+              <th data-key="rank">#</th>
+              <th data-key="name">Player</th>
+              <th data-key="team">Team</th>
+              <th data-key="pos">Pos</th>
+              <th data-key="gp">GP</th>
+              <th data-key="fptsg" class="sorted">FPTS/G</th>
+              <th data-key="fptstot">FPTS (season)</th>
+              <th data-key="passYds">Pass Yd</th>
+              <th data-key="passTd">Pass TD</th>
+              <th data-key="intc">INT</th>
+              <th data-key="rushYds">Rush Yd</th>
+              <th data-key="rushTd">Rush TD</th>
+              <th data-key="rec">Rec</th>
+              <th data-key="recYds">Rec Yd</th>
+              <th data-key="recTd">Rec TD</th>
+              <th data-key="fumLost">Fum Lost</th>
+            </tr>
+          </thead>
+          <tbody id="rank-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DRAFT TAB -->
+    <section id="tab-draft" class="hidden">
+
+      <div id="draft-setup" class="card">
+        <h3>Draft Setup</h3>
+        <div class="row">
+          <div class="field">
+            <label>Teams</label>
+            <input type="number" id="d-teams" value="8" min="4" max="16">
+          </div>
+          <div class="field">
+            <label>Your draft slot</label>
+            <input type="number" id="d-slot" value="1" min="1" max="16">
+          </div>
+          <div class="field">
+            <label>Bench spots</label>
+            <input type="number" id="d-bench" value="6" min="0" max="12">
+          </div>
+          <div class="field">
+            <button class="primary" id="start-draft">Start Draft</button>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:10px; font-size:12.5px;">
+          Starting lineup: QB, RB, RB, WR, WR, TE, FLEX (RB/WR/TE), DST, K (9 starters) + bench. Snake draft
+          order. Opponents auto-draft best player available; you pick manually each of your turns.
+        </div>
+      </div>
+
+      <div id="draft-live" class="hidden" style="margin-top:16px;">
+        <div class="grid-draft">
+          <div>
+            <div class="card">
+              <h3 id="draft-status">Draft in progress</h3>
+              <div class="board" id="pick-board"></div>
+            </div>
+            <div class="card" style="margin-top:14px;">
+              <h3>Your Roster</h3>
+              <div id="my-roster"></div>
+              <div class="stat-tiles" id="my-tiles"></div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <h3 id="avail-title">Available Players &mdash; Your Pick</h3>
+              <div id="avail-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <h3>League Team Ratings</h3>
+          <div class="muted" style="font-size:12px; margin-bottom:10px;">
+            Live power ranking, graded on a curve across the league using each team's projected starting
+            lineup FPTS/game. Updates after every pick.
+          </div>
+          <div class="tablewrap" style="max-height:none;">
+            <table id="team-rating-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team</th>
+                  <th>Grade</th>
+                  <th>Starters FPTS/G</th>
+                  <th>Full Roster FPTS/G</th>
+                  <th>Players</th>
+                </tr>
+              </thead>
+              <tbody id="team-rating-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+</main>
+
+<script>
+const PLAYERS_RAW = [{"name": "Matthew Stafford", "team": "LAR", "pos": "QB", "gp": 17, "passYds": 4707, "passTd": 46, "intc": 8, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jared Goff", "team": "DET", "pos": "QB", "gp": 17, "passYds": 4564, "passTd": 34, "intc": 8, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Dak Prescott", "team": "DAL", "pos": "QB", "gp": 17, "passYds": 4552, "passTd": 30, "intc": 10, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Drake Maye", "team": "NE", "pos": "QB", "gp": 17, "passYds": 4394, "passTd": 31, "intc": 8, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Sam Darnold", "team": "SEA", "pos": "QB", "gp": 17, "passYds": 4048, "passTd": 25, "intc": 14, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Trevor Lawrence", "team": "JAX", "pos": "QB", "gp": 17, "passYds": 4007, "passTd": 29, "intc": 12, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Caleb Williams", "team": "CHI", "pos": "QB", "gp": 17, "passYds": 3942, "passTd": 27, "intc": 7, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Bo Nix", "team": "DEN", "pos": "QB", "gp": 17, "passYds": 3931, "passTd": 25, "intc": 11, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Justin Herbert", "team": "LAC", "pos": "QB", "gp": 16, "passYds": 3727, "passTd": 26, "intc": 13, "rushYds": 498, "rushTd": 2, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Baker Mayfield", "team": "TB", "pos": "QB", "gp": 17, "passYds": 3693, "passTd": 26, "intc": 11, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Josh Allen", "team": "BUF", "pos": "QB", "gp": 17, "passYds": 3668, "passTd": 25, "intc": 10, "rushYds": 579, "rushTd": 14, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Patrick Mahomes", "team": "KC", "pos": "QB", "gp": 14, "passYds": 3587, "passTd": 22, "intc": 11, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jordan Love", "team": "GB", "pos": "QB", "gp": 15, "passYds": 3381, "passTd": 23, "intc": 6, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jacoby Brissett", "team": "ARI", "pos": "QB", "gp": 14, "passYds": 3366, "passTd": 23, "intc": 8, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Aaron Rodgers", "team": "PIT", "pos": "QB", "gp": 16, "passYds": 3322, "passTd": 24, "intc": 7, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jalen Hurts", "team": "PHI", "pos": "QB", "gp": 16, "passYds": 3224, "passTd": 25, "intc": 6, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Cam Ward", "team": "TEN", "pos": "QB", "gp": 17, "passYds": 3169, "passTd": 15, "intc": 7, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Daniel Jones", "team": "IND", "pos": "QB", "gp": 13, "passYds": 3101, "passTd": 19, "intc": 8, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "C.J. Stroud", "team": "HOU", "pos": "QB", "gp": 14, "passYds": 3041, "passTd": 19, "intc": 8, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Geno Smith", "team": "LV", "pos": "QB", "gp": 15, "passYds": 3025, "passTd": 19, "intc": 17, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Bryce Young", "team": "CAR", "pos": "QB", "gp": 16, "passYds": 3011, "passTd": 23, "intc": 11, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tua Tagovailoa", "team": "MIA", "pos": "QB", "gp": 14, "passYds": 2660, "passTd": 20, "intc": 15, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Lamar Jackson", "team": "BAL", "pos": "QB", "gp": 13, "passYds": 2549, "passTd": 21, "intc": 7, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Joe Flacco", "team": "CIN/CLE", "pos": "QB", "gp": 13, "passYds": 2479, "passTd": 15, "intc": 10, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tyler Shough", "team": "NO", "pos": "QB", "gp": 11, "passYds": 2384, "passTd": 10, "intc": 6, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jaxson Dart", "team": "NYG", "pos": "QB", "gp": 14, "passYds": 2272, "passTd": 15, "intc": 5, "rushYds": 487, "rushTd": 9, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Brock Purdy", "team": "SF", "pos": "QB", "gp": 9, "passYds": 2167, "passTd": 20, "intc": 10, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Mac Jones", "team": "SF", "pos": "QB", "gp": 11, "passYds": 2151, "passTd": 13, "intc": 6, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Michael Penix Jr.", "team": "ATL", "pos": "QB", "gp": 9, "passYds": 1982, "passTd": 9, "intc": 3, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Joe Burrow", "team": "CIN", "pos": "QB", "gp": 8, "passYds": 1809, "passTd": 17, "intc": 5, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Kirk Cousins", "team": "ATL", "pos": "QB", "gp": 10, "passYds": 1721, "passTd": 10, "intc": 5, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Marcus Mariota", "team": "WSH", "pos": "QB", "gp": 11, "passYds": 1695, "passTd": 10, "intc": 7, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "J.J. McCarthy", "team": "MIN", "pos": "QB", "gp": 10, "passYds": 1632, "passTd": 11, "intc": 12, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Spencer Rattler", "team": "NO", "pos": "QB", "gp": 9, "passYds": 1586, "passTd": 8, "intc": 5, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Shedeur Sanders", "team": "CLE", "pos": "QB", "gp": 8, "passYds": 1400, "passTd": 7, "intc": 10, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jayden Daniels", "team": "WSH", "pos": "QB", "gp": 7, "passYds": 1262, "passTd": 8, "intc": 3, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Justin Fields", "team": "NYJ", "pos": "QB", "gp": 9, "passYds": 1259, "passTd": 7, "intc": 1, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Carson Wentz", "team": "MIN", "pos": "QB", "gp": 5, "passYds": 1216, "passTd": 6, "intc": 5, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Kyler Murray", "team": "ARI", "pos": "QB", "gp": 5, "passYds": 962, "passTd": 6, "intc": 3, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Dillon Gabriel", "team": "CLE", "pos": "QB", "gp": 10, "passYds": 937, "passTd": 7, "intc": 2, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Davis Mills", "team": "HOU", "pos": "QB", "gp": 6, "passYds": 915, "passTd": 5, "intc": 1, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Russell Wilson", "team": "NYG", "pos": "QB", "gp": 6, "passYds": 831, "passTd": 3, "intc": 3, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tyrod Taylor", "team": "NYJ", "pos": "QB", "gp": 6, "passYds": 779, "passTd": 5, "intc": 5, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jake Browning", "team": "CIN", "pos": "QB", "gp": 5, "passYds": 771, "passTd": 6, "intc": 8, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Brady Cook", "team": "NYJ", "pos": "QB", "gp": 5, "passYds": 739, "passTd": 2, "intc": 7, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Quinn Ewers", "team": "MIA", "pos": "QB", "gp": 4, "passYds": 622, "passTd": 3, "intc": 3, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jameis Winston", "team": "NYG", "pos": "QB", "gp": 3, "passYds": 567, "passTd": 2, "intc": 2, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Philip Rivers", "team": "IND", "pos": "QB", "gp": 3, "passYds": 544, "passTd": 4, "intc": 3, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tyler Huntley", "team": "BAL", "pos": "QB", "gp": 5, "passYds": 426, "passTd": 2, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Malik Willis", "team": "GB", "pos": "QB", "gp": 4, "passYds": 422, "passTd": 3, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "James Cook III", "team": "BUF", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1621, "rushTd": 12, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 3, "fixedTotal": null, "paPerGame": null}, {"name": "Derrick Henry", "team": "BAL", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1595, "rushTd": 16, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 3, "fixedTotal": null, "paPerGame": null}, {"name": "Jonathan Taylor", "team": "IND", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1585, "rushTd": 18, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Bijan Robinson", "team": "ATL", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1478, "rushTd": 7, "rec": 79, "recYds": 820, "recTd": 4, "fumLost": 3, "fixedTotal": null, "paPerGame": null}, {"name": "De'Von Achane", "team": "MIA", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1350, "rushTd": 8, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Kyren Williams", "team": "LAR", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1252, "rushTd": 10, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Jahmyr Gibbs", "team": "DET", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1223, "rushTd": 13, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Christian McCaffrey", "team": "SF", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1202, "rushTd": 10, "rec": 102, "recYds": 924, "recTd": 7, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Javonte Williams", "team": "DAL", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1201, "rushTd": 11, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Saquon Barkley", "team": "PHI", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1140, "rushTd": 7, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Travis Etienne Jr.", "team": "JAX", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1107, "rushTd": 7, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "D'Andre Swift", "team": "CHI", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1087, "rushTd": 9, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Tony Pollard", "team": "TEN", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1082, "rushTd": 5, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Rico Dowdle", "team": "CAR", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1076, "rushTd": 6, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Breece Hall", "team": "NYJ", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1065, "rushTd": 4, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Kenneth Walker III", "team": "SEA", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1027, "rushTd": 5, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Chase Brown", "team": "CIN", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 1019, "rushTd": 6, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Ashton Jeanty", "team": "LV", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 975, "rushTd": 5, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Jaylen Warren", "team": "PIT", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 958, "rushTd": 6, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Josh Jacobs", "team": "GB", "pos": "RB", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 929, "rushTd": 13, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "TreVeyon Henderson", "team": "NE", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 911, "rushTd": 9, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Quinshon Judkins", "team": "CLE", "pos": "RB", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 827, "rushTd": 7, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jacory Croskey-Merritt", "team": "WSH", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 805, "rushTd": 8, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Kyle Monangai", "team": "CHI", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 783, "rushTd": 5, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "J.K. Dobbins", "team": "DEN", "pos": "RB", "gp": 10, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 772, "rushTd": 4, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jordan Mason", "team": "MIN", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 758, "rushTd": 6, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Blake Corum", "team": "LAR", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 746, "rushTd": 6, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tyrone Tracy Jr.", "team": "NYG", "pos": "RB", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 740, "rushTd": 2, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Zach Charbonnet", "team": "SEA", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 730, "rushTd": 12, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "David Montgomery", "team": "DET", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 716, "rushTd": 8, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Woody Marks", "team": "HOU", "pos": "RB", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 703, "rushTd": 2, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Kimani Vidal", "team": "LAC", "pos": "RB", "gp": 13, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 643, "rushTd": 3, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Kareem Hunt", "team": "KC", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 611, "rushTd": 8, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Rhamondre Stevenson", "team": "NE", "pos": "RB", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 603, "rushTd": 7, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Bucky Irving", "team": "TB", "pos": "RB", "gp": 10, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 588, "rushTd": 1, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Rachaad White", "team": "TB", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 572, "rushTd": 4, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Aaron Jones Sr.", "team": "MIN", "pos": "RB", "gp": 12, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 548, "rushTd": 2, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Omarion Hampton", "team": "LAC", "pos": "RB", "gp": 9, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 545, "rushTd": 4, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "RJ Harvey", "team": "DEN", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 540, "rushTd": 7, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Kenny Gainwell", "team": "PIT", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 537, "rushTd": 5, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tyler Allgeier", "team": "ATL", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 514, "rushTd": 8, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Chuba Hubbard", "team": "CAR", "pos": "RB", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 511, "rushTd": 1, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Nick Chubb", "team": "HOU", "pos": "RB", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 506, "rushTd": 3, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Chris Rodriguez Jr.", "team": "WSH", "pos": "RB", "gp": 13, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 500, "rushTd": 6, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Emanuel Wilson", "team": "GB", "pos": "RB", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 496, "rushTd": 3, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Alvin Kamara", "team": "NO", "pos": "RB", "gp": 11, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 471, "rushTd": 1, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Isiah Pacheco", "team": "KC", "pos": "RB", "gp": 13, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 462, "rushTd": 1, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jaxon Smith-Njigba", "team": "SEA", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 119, "recYds": 1793, "recTd": 10, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Puka Nacua", "team": "LAR", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 129, "recYds": 1715, "recTd": 10, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "George Pickens", "team": "DAL", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 93, "recYds": 1429, "recTd": 9, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Ja'Marr Chase", "team": "CIN", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 125, "recYds": 1412, "recTd": 8, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Amon-Ra St. Brown", "team": "DET", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 117, "recYds": 1401, "recTd": 11, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Trey McBride", "team": "ARI", "pos": "TE", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 126, "recYds": 1239, "recTd": 11, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Zay Flowers", "team": "BAL", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 86, "recYds": 1211, "recTd": 5, "fumLost": 3, "fixedTotal": null, "paPerGame": null}, {"name": "Chris Olave", "team": "NO", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 100, "recYds": 1163, "recTd": 9, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Nico Collins", "team": "HOU", "pos": "WR", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 71, "recYds": 1117, "recTd": 6, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Jameson Williams", "team": "DET", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 65, "recYds": 1117, "recTd": 7, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "CeeDee Lamb", "team": "DAL", "pos": "WR", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 75, "recYds": 1077, "recTd": 3, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Justin Jefferson", "team": "MIN", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 84, "recYds": 1048, "recTd": 2, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Courtland Sutton", "team": "DEN", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 74, "recYds": 1017, "recTd": 7, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Wan'Dale Robinson", "team": "NYG", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 92, "recYds": 1014, "recTd": 4, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tetairoa McMillan", "team": "CAR", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 70, "recYds": 1014, "recTd": 7, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Stefon Diggs", "team": "NE", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 85, "recYds": 1013, "recTd": 4, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "DeVonta Smith", "team": "PHI", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 77, "recYds": 1008, "recTd": 4, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Michael Wilson", "team": "ARI", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 78, "recYds": 1006, "recTd": 7, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "A.J. Brown", "team": "PHI", "pos": "WR", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 78, "recYds": 1003, "recTd": 7, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Alec Pierce", "team": "IND", "pos": "WR", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 47, "recYds": 1003, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Emeka Egbuka", "team": "TB", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 63, "recYds": 938, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Kyle Pitts Sr.", "team": "ATL", "pos": "TE", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 88, "recYds": 928, "recTd": 5, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Drake London", "team": "ATL", "pos": "WR", "gp": 12, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 68, "recYds": 919, "recTd": 7, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Jaylen Waddle", "team": "MIA", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 64, "recYds": 910, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Juwan Johnson", "team": "NO", "pos": "TE", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 77, "recYds": 889, "recTd": 3, "fumLost": 2, "fixedTotal": null, "paPerGame": null}, {"name": "Travis Kelce", "team": "KC", "pos": "TE", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 76, "recYds": 851, "recTd": 5, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "DK Metcalf", "team": "PIT", "pos": "WR", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 59, "recYds": 850, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Parker Washington", "team": "JAX", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 58, "recYds": 847, "recTd": 5, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tee Higgins", "team": "CIN", "pos": "WR", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 59, "recYds": 846, "recTd": 11, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Jakobi Meyers", "team": "LV/JAX", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 75, "recYds": 835, "recTd": 3, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Tyler Warren", "team": "IND", "pos": "TE", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 76, "recYds": 817, "recTd": 4, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Davante Adams", "team": "LAR", "pos": "WR", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 60, "recYds": 789, "recTd": 14, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Ladd McConkey", "team": "LAC", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 66, "recYds": 789, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Michael Pittman Jr.", "team": "IND", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 80, "recYds": 784, "recTd": 7, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Keenan Allen", "team": "LAC", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 81, "recYds": 777, "recTd": 4, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Dalton Schultz", "team": "HOU", "pos": "TE", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 82, "recYds": 777, "recTd": 3, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Hunter Henry", "team": "NE", "pos": "TE", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 60, "recYds": 768, "recTd": 7, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Quentin Johnston", "team": "LAC", "pos": "WR", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 51, "recYds": 735, "recTd": 8, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Harold Fannin Jr.", "team": "CLE", "pos": "TE", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 72, "recYds": 731, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Deebo Samuel Sr.", "team": "WSH", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 72, "recYds": 727, "recTd": 5, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Romeo Doubs", "team": "GB", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 55, "recYds": 724, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Khalil Shakir", "team": "BUF", "pos": "WR", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 72, "recYds": 719, "recTd": 4, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Colston Loveland", "team": "CHI", "pos": "TE", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 58, "recYds": 713, "recTd": 6, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Troy Franklin", "team": "DEN", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 65, "recYds": 709, "recTd": 6, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Brian Thomas Jr.", "team": "JAX", "pos": "WR", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 48, "recYds": 707, "recTd": 2, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Tre Tucker", "team": "LV", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 57, "recYds": 696, "recTd": 5, "fumLost": 0, "fixedTotal": null, "paPerGame": null}, {"name": "Rashid Shaheed", "team": "SEA/NO", "pos": "WR", "gp": 18, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 59, "recYds": 687, "recTd": 2, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "DJ Moore", "team": "CHI", "pos": "WR", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 50, "recYds": 682, "recTd": 6, "fumLost": 1, "fixedTotal": null, "paPerGame": null}, {"name": "Ka'imi Fairbairn", "team": "HOU", "pos": "K", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 194, "paPerGame": null}, {"name": "Jason Myers", "team": "SEA", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 202, "paPerGame": null}, {"name": "Cameron Dicker", "team": "LAC", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 170, "paPerGame": null}, {"name": "Brandon Aubrey", "team": "DAL", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 187, "paPerGame": null}, {"name": "Harrison Butker", "team": "KC", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 149, "paPerGame": null}, {"name": "Will Reichard", "team": "MIN", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 159, "paPerGame": null}, {"name": "Chase McLaughlin", "team": "TB", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 156, "paPerGame": null}, {"name": "Cam Little", "team": "JAX", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 164, "paPerGame": null}, {"name": "Tyler Loop", "team": "BAL", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 144, "paPerGame": null}, {"name": "Blake Grupe", "team": "IND/NO", "pos": "K", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 129, "paPerGame": null}, {"name": "Nick Folk", "team": "NYJ", "pos": "K", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 127, "paPerGame": null}, {"name": "Wil Lutz", "team": "DEN", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 134, "paPerGame": null}, {"name": "Joey Slye", "team": "TEN", "pos": "K", "gp": 16, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 135, "paPerGame": null}, {"name": "Eddy Pineiro", "team": "SF", "pos": "K", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 140, "paPerGame": null}, {"name": "Chris Boswell", "team": "PIT", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 151, "paPerGame": null}, {"name": "Riley Patterson", "team": "MIA", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 132, "paPerGame": null}, {"name": "Andy Borregales", "team": "NE", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 149, "paPerGame": null}, {"name": "Jake Bates", "team": "DET", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 152, "paPerGame": null}, {"name": "Cairo Santos", "team": "CHI", "pos": "K", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 132, "paPerGame": null}, {"name": "Evan McPherson", "team": "CIN", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 136, "paPerGame": null}, {"name": "Chad Ryland", "team": "ARI", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 130, "paPerGame": null}, {"name": "Brandon McManus", "team": "GB", "pos": "K", "gp": 14, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 113, "paPerGame": null}, {"name": "Andre Szmyt", "team": "CLE", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 112, "paPerGame": null}, {"name": "Ryan Fitzgerald", "team": "CAR", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 111, "paPerGame": null}, {"name": "Daniel Carlson", "team": "LV", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 103, "paPerGame": null}, {"name": "Jake Elliott", "team": "PHI", "pos": "K", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 116, "paPerGame": null}, {"name": "Zane Gonzalez", "team": "ATL", "pos": "K", "gp": 9, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 96, "paPerGame": null}, {"name": "Jake Moody", "team": "SF/CHI/WSH", "pos": "K", "gp": 9, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 81, "paPerGame": null}, {"name": "Matt Prater", "team": "BUF", "pos": "K", "gp": 15, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 108, "paPerGame": null}, {"name": "Matt Gay", "team": "SF/WSH", "pos": "K", "gp": 12, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 91, "paPerGame": null}, {"name": "Spencer Shrader", "team": "IND", "pos": "K", "gp": 5, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 57, "paPerGame": null}, {"name": "Harrison Mevis", "team": "LAR", "pos": "K", "gp": 9, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 82, "paPerGame": null}, {"name": "Charlie Smyth", "team": "NO", "pos": "K", "gp": 6, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 60, "paPerGame": null}, {"name": "Michael Badgley", "team": "IND/BUF", "pos": "K", "gp": 9, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 62, "paPerGame": null}, {"name": "Parker Romo", "team": "ATL", "pos": "K", "gp": 7, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 48, "paPerGame": null}, {"name": "Joshua Karty", "team": "LAR", "pos": "K", "gp": 8, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 58, "paPerGame": null}, {"name": "Graham Gano", "team": "NYG", "pos": "K", "gp": 5, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 39, "paPerGame": null}, {"name": "Ben Sauls", "team": "NYG", "pos": "K", "gp": 3, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 32, "paPerGame": null}, {"name": "Younghoe Koo", "team": "ATL/NYG", "pos": "K", "gp": 6, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 33, "paPerGame": null}, {"name": "Matthew Wright", "team": "HOU/WSH/TEN", "pos": "K", "gp": 4, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 22, "paPerGame": null}, {"name": "Lucas Havrisik", "team": "GB", "pos": "K", "gp": 3, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 22, "paPerGame": null}, {"name": "Jude McAtamney", "team": "NYG", "pos": "K", "gp": 4, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 15, "paPerGame": null}, {"name": "Seahawks", "team": "SEA", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 37.6, "paPerGame": 17.2}, {"name": "Texans", "team": "HOU", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 36.3, "paPerGame": 17.4}, {"name": "Broncos", "team": "DEN", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 29.4, "paPerGame": 18.3}, {"name": "Patriots", "team": "NE", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 25.6, "paPerGame": 18.8}, {"name": "Eagles", "team": "PHI", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 23.4, "paPerGame": 19.1}, {"name": "Chiefs", "team": "KC", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 22.1, "paPerGame": 19.3}, {"name": "Vikings", "team": "MIN", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 20.0, "paPerGame": 19.6}, {"name": "Jaguars", "team": "JAX", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 18.7, "paPerGame": 19.8}, {"name": "Chargers", "team": "LAC", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 17.0, "paPerGame": 20.0}, {"name": "Rams", "team": "LAR", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 16.1, "paPerGame": 20.4}, {"name": "Packers", "team": "GB", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 14.1, "paPerGame": 21.2}, {"name": "Bills", "team": "BUF", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 13.4, "paPerGame": 21.5}, {"name": "49ers", "team": "SF", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 12.6, "paPerGame": 21.8}, {"name": "Browns", "team": "CLE", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 11.4, "paPerGame": 22.3}, {"name": "Panthers", "team": "CAR", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 11.3, "paPerGame": 22.4}, {"name": "Saints", "team": "NO", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 10.9, "paPerGame": 22.5}, {"name": "Steelers", "team": "PIT", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 10.3, "paPerGame": 22.8}, {"name": "Ravens", "team": "BAL", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 8.7, "paPerGame": 23.4}, {"name": "Falcons", "team": "ATL", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 8.3, "paPerGame": 23.6}, {"name": "Buccaneers", "team": "TB", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 6.9, "paPerGame": 24.2}, {"name": "Colts", "team": "IND", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 6.7, "paPerGame": 24.2}, {"name": "Lions", "team": "DET", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 6.6, "paPerGame": 24.3}, {"name": "Bears", "team": "CHI", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 6.3, "paPerGame": 24.4}, {"name": "Dolphins", "team": "MIA", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 5.0, "paPerGame": 24.9}, {"name": "Raiders", "team": "LV", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 3.9, "paPerGame": 25.4}, {"name": "Giants", "team": "NYG", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 2.9, "paPerGame": 25.8}, {"name": "Commanders", "team": "WSH", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": 1.1, "paPerGame": 26.5}, {"name": "Titans", "team": "TEN", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": -2.7, "paPerGame": 28.1}, {"name": "Cardinals", "team": "ARI", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": -4.1, "paPerGame": 28.7}, {"name": "Bengals", "team": "CIN", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": -4.7, "paPerGame": 28.9}, {"name": "Jets", "team": "NYJ", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": -6.3, "paPerGame": 29.6}, {"name": "Cowboys", "team": "DAL", "pos": "DST", "gp": 17, "passYds": 0, "passTd": 0, "intc": 0, "rushYds": 0, "rushTd": 0, "rec": 0, "recYds": 0, "recTd": 0, "fumLost": 0, "fixedTotal": -7.4, "paPerGame": 30.1}];
+
+// ---------- Scoring ----------
+function getWeights() {
+  return {
+    passYds: parseFloat(document.getElementById('w-passYds').value) || 0,
+    passTd: parseFloat(document.getElementById('w-passTd').value) || 0,
+    intc: parseFloat(document.getElementById('w-intc').value) || 0,
+    rushYds: parseFloat(document.getElementById('w-rushYds').value) || 0,
+    rushTd: parseFloat(document.getElementById('w-rushTd').value) || 0,
+    rec: parseFloat(document.getElementById('w-rec').value) || 0,
+    recYds: parseFloat(document.getElementById('w-recYds').value) || 0,
+    recTd: parseFloat(document.getElementById('w-recTd').value) || 0,
+    fumLost: parseFloat(document.getElementById('w-fumLost').value) || 0,
+  };
+}
+const DEFAULT_WEIGHTS = { passYds: 0.04, passTd: 4, intc: -2, rushYds: 0.1, rushTd: 6, rec: 1, recYds: 0.1, recTd: 6, fumLost: -2 };
+const WEIGHT_IDS = ['w-passYds','w-passTd','w-intc','w-rushYds','w-rushTd','w-rec','w-recYds','w-recTd','w-fumLost'];
+
+function fptsSeasonTotal(p, w) {
+  // K and DST use fixed, non-editable formulas computed ahead of time (see banner note).
+  if (p.pos === 'K' || p.pos === 'DST') return p.fixedTotal;
+  return p.passYds * w.passYds + p.passTd * w.passTd + p.intc * w.intc +
+         p.rushYds * w.rushYds + p.rushTd * w.rushTd +
+         p.rec * w.rec + p.recYds * w.recYds + p.recTd * w.recTd +
+         p.fumLost * w.fumLost;
+}
+
+function eligibleSlots(pos) {
+  // returns list of slot names a player can fill, most specific first
+  if (pos === 'RB' || pos === 'WR' || pos === 'TE') return [pos, 'FLEX'];
+  return [pos];
+}
+
+function computeAll() {
+  const w = getWeights();
+  const arr = PLAYERS_RAW.map(p => {
+    const total = fptsSeasonTotal(p, w);
+    return Object.assign({}, p, { fptsg: total / p.gp, fptstot: total });
+  });
+  arr.sort((a,b) => b.fptsg - a.fptsg);
+  arr.forEach((p,i) => p.rank = i+1);
+  return arr;
+}
+
+let RANKED = computeAll();
+
+function statSummary(p) {
+  if (p.pos === 'K') return `${p.fixedTotal.toFixed(0)} season pts (FG/XP)`;
+  if (p.pos === 'DST') return `${p.paPerGame.toFixed(1)} pts allowed/gm`;
+  const parts = [];
+  if (p.passYds) parts.push(`${p.passYds} pass yd, ${p.passTd} TD`);
+  if (p.rushYds) parts.push(`${p.rushYds} rush yd, ${p.rushTd} TD`);
+  if (p.rec) parts.push(`${p.rec} rec, ${p.recYds} yd, ${p.recTd} TD`);
+  return parts.join(' &middot; ') || 'no stats';
+}
+
+// ---------- Rankings table ----------
+let sortKey = 'fptsg';
+let sortDir = -1;
+let posFilter = 'ALL';
+let searchTerm = '';
+
+function renderRankings() {
+  let rows = RANKED.slice();
+  if (posFilter !== 'ALL') rows = rows.filter(p => p.pos === posFilter);
+  if (searchTerm) rows = rows.filter(p => p.name.toLowerCase().includes(searchTerm));
+  rows.sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+    return sortDir * (av - bv);
+  });
+  const tbody = document.getElementById('rank-tbody');
+  tbody.innerHTML = rows.map(p => `
+    <tr>
+      <td class="rank">${p.rank}</td>
+      <td class="name">${p.name}</td>
+      <td class="muted">${p.team}</td>
+      <td><span class="pos-badge">${p.pos}</span></td>
+      <td>${p.gp}</td>
+      <td class="fpts">${p.fptsg.toFixed(1)}</td>
+      <td>${p.fptstot.toFixed(0)}</td>
+      <td>${p.passYds}</td>
+      <td>${p.passTd}</td>
+      <td>${p.intc}</td>
+      <td>${p.rushYds}</td>
+      <td>${p.rushTd}</td>
+      <td>${p.rec}</td>
+      <td>${p.recYds}</td>
+      <td>${p.recTd}</td>
+      <td>${p.fumLost}</td>
+    </tr>
+  `).join('');
+  document.querySelectorAll('#rank-table thead th').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.key === sortKey);
+  });
+}
+
+document.querySelectorAll('#rank-table thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = -1; }
+    renderRankings();
+  });
+});
+document.getElementById('search').addEventListener('input', e => {
+  searchTerm = e.target.value.trim().toLowerCase();
+  renderRankings();
+});
+document.querySelectorAll('#pos-filter .pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('#pos-filter .pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    posFilter = pill.dataset.pos;
+    renderRankings();
+  });
+});
+
+WEIGHT_IDS.forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    RANKED = computeAll();
+    renderRankings();
+    if (draftState) refreshDraftAvailable();
+  });
+});
+document.getElementById('reset-weights').addEventListener('click', () => {
+  document.getElementById('w-passYds').value = DEFAULT_WEIGHTS.passYds;
+  document.getElementById('w-passTd').value = DEFAULT_WEIGHTS.passTd;
+  document.getElementById('w-intc').value = DEFAULT_WEIGHTS.intc;
+  document.getElementById('w-rushYds').value = DEFAULT_WEIGHTS.rushYds;
+  document.getElementById('w-rushTd').value = DEFAULT_WEIGHTS.rushTd;
+  document.getElementById('w-rec').value = DEFAULT_WEIGHTS.rec;
+  document.getElementById('w-recYds').value = DEFAULT_WEIGHTS.recYds;
+  document.getElementById('w-recTd').value = DEFAULT_WEIGHTS.recTd;
+  document.getElementById('w-fumLost').value = DEFAULT_WEIGHTS.fumLost;
+  RANKED = computeAll();
+  renderRankings();
+  if (draftState) refreshDraftAvailable();
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-rankings').classList.toggle('hidden', btn.dataset.tab !== 'rankings');
+    document.getElementById('tab-draft').classList.toggle('hidden', btn.dataset.tab !== 'draft');
+  });
+});
+
+// ---------- Draft Assistant ----------
+const STARTER_SLOTS = ['QB','RB','RB','WR','WR','TE','FLEX','DST','K'];
+let draftState = null;
+
+function buildDraftOrder(teams, rounds) {
+  const order = [];
+  for (let r = 0; r < rounds; r++) {
+    const rd = [];
+    for (let t = 0; t < teams; t++) rd.push(t);
+    if (r % 2 === 1) rd.reverse();
+    order.push(...rd.map(t => ({ team: t, round: r+1 })));
+  }
+  return order;
+}
+
+function emptyRoster() {
+  return { starters: STARTER_SLOTS.map(s => ({ slot: s, player: null })), bench: [], players: [] };
+}
+
+function assignToRoster(roster, player) {
+  roster.players.push(player);
+  const slots = eligibleSlots(player.pos);
+  for (const slotName of slots) {
+    const open = roster.starters.find(s => s.slot === slotName && !s.player);
+    if (open) { open.player = player; return; }
+  }
+  // No starter slot fits (position already covered) — bench absorbs it.
+  // Bench has no hard cap: total picks per team is fixed by the draft's round count,
+  // so a team that skips a position simply ends up with an extra bench player and a
+  // permanently empty starter slot, same as a real league.
+  roster.bench.push(player);
+}
+
+function startDraft() {
+  const teams = parseInt(document.getElementById('d-teams').value) || 8;
+  const slot = Math.min(Math.max(parseInt(document.getElementById('d-slot').value) || 1, 1), teams);
+  const bench = parseInt(document.getElementById('d-bench').value) || 0;
+  const rounds = STARTER_SLOTS.length + bench;
+  const myTeamIdx = slot - 1;
+
+  draftState = {
+    teams, bench, rounds, myTeamIdx,
+    order: buildDraftOrder(teams, rounds),
+    pickIdx: 0,
+    available: RANKED.slice(),
+    rosters: Array.from({length: teams}, () => emptyRoster()),
+    log: [],
+    finished: false,
+  };
+
+  document.getElementById('draft-setup').classList.add('hidden');
+  document.getElementById('draft-live').classList.remove('hidden');
+  advanceDraft();
+}
+
+function teamLabel(i) {
+  return draftState && i === draftState.myTeamIdx ? 'YOU' : `Team ${i+1}`;
+}
+
+function autoPickFor(teamIdx) {
+  const roster = draftState.rosters[teamIdx];
+  const p = draftState.available.shift();
+  if (p) assignToRoster(roster, p);
+  return p;
+}
+
+function advanceDraft() {
+  while (draftState.pickIdx < draftState.order.length) {
+    const { team } = draftState.order[draftState.pickIdx];
+    if (team === draftState.myTeamIdx) {
+      renderDraft();
+      return;
+    }
+    const p = autoPickFor(team);
+    draftState.log.push({ team, player: p, round: draftState.order[draftState.pickIdx].round, num: draftState.pickIdx+1 });
+    draftState.pickIdx++;
+  }
+  draftState.finished = true;
+  renderDraft();
+}
+
+function userDraftPlayer(playerName) {
+  const idx = draftState.available.findIndex(p => p.name === playerName);
+  if (idx === -1) return;
+  const p = draftState.available.splice(idx, 1)[0];
+  const roster = draftState.rosters[draftState.myTeamIdx];
+  assignToRoster(roster, p);
+  draftState.log.push({ team: draftState.myTeamIdx, player: p, round: draftState.order[draftState.pickIdx].round, num: draftState.pickIdx+1 });
+  draftState.pickIdx++;
+  advanceDraft();
+}
+
+function refreshDraftAvailable() {
+  // recompute fptsg for players still available, in case weights changed mid-draft
+  const w = getWeights();
+  draftState.available.forEach(p => { const total = fptsSeasonTotal(p, w); p.fptsg = total / p.gp; p.fptstot = total; });
+  draftState.available.sort((a,b) => b.fptsg - a.fptsg);
+  renderDraft();
+}
+
+function positionalNeed(roster) {
+  return roster.starters.filter(s => !s.player).map(s => s.slot);
+}
+
+function renderDraft() {
+  const board = document.getElementById('pick-board');
+  board.innerHTML = draftState.log.slice().reverse().map(entry => `
+    <div class="pickrow ${entry.team === draftState.myTeamIdx ? 'me' : ''}">
+      <div class="picknum">R${entry.round}.${entry.num}</div>
+      <div class="teamtag">${teamLabel(entry.team)}</div>
+      <div>${entry.player ? entry.player.name + ' <span class="muted">(' + entry.player.pos + ', ' + entry.player.team + ')</span>' : '&mdash;'}</div>
+    </div>
+  `).join('');
+
+  const roster = draftState.rosters[draftState.myTeamIdx];
+  const myRosterEl = document.getElementById('my-roster');
+  let html = roster.starters.map(s => `
+    <div class="roster-slot ${s.player ? '' : 'empty'}">
+      <span class="slotname">${s.slot}</span>
+      <span>${s.player ? s.player.name + ' (' + s.player.pos + ', ' + s.player.team + ')' : 'empty'}</span>
+      <span class="fpts">${s.player ? s.player.fptsg.toFixed(1) : ''}</span>
+    </div>
+  `).join('');
+  html += roster.bench.map(p => `
+    <div class="roster-slot">
+      <span class="slotname">BN</span>
+      <span>${p.name} (${p.pos}, ${p.team})</span>
+      <span class="fpts">${p.fptsg.toFixed(1)}</span>
+    </div>
+  `).join('');
+  for (let i = roster.bench.length; i < draftState.bench; i++) {
+    html += `<div class="roster-slot empty"><span class="slotname">BN</span><span>empty</span><span></span></div>`;
+  }
+  myRosterEl.innerHTML = html;
+
+  const starterTotal = roster.starters.reduce((s,x) => s + (x.player ? x.player.fptsg : 0), 0);
+  const rosterTotal = roster.players.reduce((s,x) => s + x.fptsg, 0);
+  document.getElementById('my-tiles').innerHTML = `
+    <div class="tile"><div class="v">${starterTotal.toFixed(1)}</div><div class="l">Starters FPTS/G</div></div>
+    <div class="tile"><div class="v">${rosterTotal.toFixed(1)}</div><div class="l">Full Roster FPTS/G</div></div>
+    <div class="tile"><div class="v">${roster.players.length}</div><div class="l">Players Drafted</div></div>
+  `;
+
+  renderTeamRatings();
+
+  const availEl = document.getElementById('avail-list');
+  const statusEl = document.getElementById('draft-status');
+  const availTitle = document.getElementById('avail-title');
+
+  if (draftState.finished) {
+    statusEl.textContent = 'Draft complete';
+    availTitle.textContent = 'Final optimal starting lineup above';
+    availEl.innerHTML = `<div class="muted" style="padding:10px;">All ${draftState.rounds} rounds complete. Your projected starting lineup totals ${starterTotal.toFixed(1)} FPTS/game (${(starterTotal*17).toFixed(0)} over a 17-game season, injuries/byes notwithstanding).</div>`;
+    return;
+  }
+
+  const current = draftState.order[draftState.pickIdx];
+  statusEl.textContent = `Round ${current.round}, Pick ${draftState.pickIdx+1} of ${draftState.order.length} — your turn`;
+  availTitle.innerHTML = 'Available Players &mdash; Your Pick';
+
+  const needs = positionalNeed(roster);
+  const top = draftState.available.slice(0, 15);
+  availEl.innerHTML = top.map(p => {
+    const fills = eligibleSlots(p.pos).some(s => needs.includes(s));
+    return `
+    <div class="avail-row">
+      <div class="info">
+        <div class="n">${p.name} <span class="pos-badge">${p.pos}</span> ${fills ? '<span class="muted" style="color:var(--green)">fills need</span>' : ''}</div>
+        <div class="s">${p.team} &middot; ${p.fptsg.toFixed(1)} FPTS/G &middot; ${statSummary(p)}</div>
+      </div>
+      <button class="small" data-draft-name="${p.name.replace(/"/g, '&quot;')}">Draft</button>
+    </div>
+  `;
+  }).join('');
+}
+
+function gradeForZ(z) {
+  if (z >= 1.25) return 'A+';
+  if (z >= 0.75) return 'A';
+  if (z >= 0.35) return 'A-';
+  if (z >= 0.1) return 'B+';
+  if (z >= -0.1) return 'B';
+  if (z >= -0.35) return 'B-';
+  if (z >= -0.75) return 'C+';
+  if (z >= -1.25) return 'C';
+  return 'D';
+}
+function gradeClass(grade) {
+  return 'grade-' + grade[0];
+}
+
+function renderTeamRatings() {
+  const teams = draftState.rosters.map((roster, i) => {
+    const starterTotal = roster.starters.reduce((s,x) => s + (x.player ? x.player.fptsg : 0), 0);
+    const rosterTotal = roster.players.reduce((s,x) => s + x.fptsg, 0);
+    return { idx: i, starterTotal, rosterTotal, count: roster.players.length };
+  });
+
+  const mean = teams.reduce((s,t) => s + t.starterTotal, 0) / teams.length;
+  const variance = teams.reduce((s,t) => s + Math.pow(t.starterTotal - mean, 2), 0) / teams.length;
+  const stdev = Math.sqrt(variance) || 1;
+
+  teams.forEach(t => { t.z = (t.starterTotal - mean) / stdev; t.grade = gradeForZ(t.z); });
+  teams.sort((a,b) => b.starterTotal - a.starterTotal);
+
+  const tbody = document.getElementById('team-rating-tbody');
+  tbody.innerHTML = teams.map((t, rank) => `
+    <tr class="${t.idx === draftState.myTeamIdx ? 'me' : ''}">
+      <td class="rank">${rank+1}</td>
+      <td class="name">${teamLabel(t.idx)}</td>
+      <td><span class="grade-badge ${gradeClass(t.grade)}">${t.grade}</span></td>
+      <td class="fpts">${t.starterTotal.toFixed(1)}</td>
+      <td>${t.rosterTotal.toFixed(1)}</td>
+      <td class="muted">${t.count}</td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('avail-list').addEventListener('click', e => {
+  const btn = e.target.closest('[data-draft-name]');
+  if (btn) userDraftPlayer(btn.dataset.draftName);
+});
+
+document.getElementById('start-draft').addEventListener('click', startDraft);
+
+renderRankings();
+</script>
+</body>
+</html>
