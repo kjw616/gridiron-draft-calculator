@@ -5,7 +5,7 @@ football points league, with scoring weights you can edit.
 
 ![Rankings view with editable scoring weights](screenshot.png)
 
-**Live demo:** _add GitHub Pages link here_
+**Live demo:** https://kjw616.github.io/gridiron-draft-calculator/
 
 ## What it does
 
